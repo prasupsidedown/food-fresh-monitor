@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Database as DatabaseIcon, Search, Download, Filter } from "lucide-react";
 
-// Mock database records
 const generateDatabaseRecords = () => {
   const records = [];
   const now = new Date();
@@ -33,13 +32,11 @@ const Database = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 20;
 
-  // Filter records based on search term
   const filteredRecords = records.filter(record =>
     record.timestamp.toLowerCase().includes(searchTerm.toLowerCase()) ||
     record.status.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination
   const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
   const startIndex = (currentPage - 1) * recordsPerPage;
   const paginatedRecords = filteredRecords.slice(startIndex, startIndex + recordsPerPage);

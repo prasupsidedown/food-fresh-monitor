@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Thermometer, Droplets, Calendar, Download } from "lucide-react";
 
-// Generate more detailed mock data for historical view
 const generateDetailedMockData = (days: number = 7) => {
   const data = [];
   const now = new Date();

@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Wind, Calendar, Download, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 
-// Generate air quality mock data
 const generateAirQualityData = (days: number = 7) => {
   const data = [];
   const now = new Date();
@@ -15,11 +14,10 @@ const generateAirQualityData = (days: number = 7) => {
     for (let h = 0; h < 24; h++) {
       const time = new Date(now.getTime() - d * 24 * 60 * 60 * 1000 - (23 - h) * 60 * 60 * 1000);
       
-      // Simulate air quality variations (higher values during "cooking" hours)
       let baseValue = 45;
-      if (h >= 6 && h <= 8) baseValue += 20; // Morning cooking
-      if (h >= 11 && h <= 13) baseValue += 15; // Lunch time
-      if (h >= 17 && h <= 19) baseValue += 25; // Dinner time
+      if (h >= 6 && h <= 8) baseValue += 20;
+      if (h >= 11 && h <= 13) baseValue += 15;
+      if (h >= 17 && h <= 19) baseValue += 25;
       
       data.push({
         time: time.toLocaleDateString('id-ID', { 
@@ -73,7 +71,6 @@ const AirQuality = () => {
     const max = Math.max(...values);
     const min = Math.min(...values);
     
-    // Count by category
     const good = values.filter(v => v <= 50).length;
     const moderate = values.filter(v => v > 50 && v <= 80).length;
     const poor = values.filter(v => v > 80).length;

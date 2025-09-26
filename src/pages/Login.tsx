@@ -18,7 +18,6 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate login for demo purposes
     setTimeout(() => {
       if (email && password) {
         toast({

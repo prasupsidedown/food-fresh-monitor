@@ -19,7 +19,6 @@ const FoodStorageList = () => {
   const [foods, setFoods] = useState<FoodItem[]>([]);
   const [newFood, setNewFood] = useState({ name: "", category: "", expiryDate: "" });
 
-  // 🔹 Load dari localStorage saat pertama kali render
   useEffect(() => {
     const stored = localStorage.getItem("foods");
     if (stored) {
@@ -27,7 +26,6 @@ const FoodStorageList = () => {
     }
   }, []);
 
-  // 🔹 Simpan ke localStorage tiap kali data berubah
   useEffect(() => {
     localStorage.setItem("foods", JSON.stringify(foods));
   }, [foods]);
@@ -59,7 +57,6 @@ const FoodStorageList = () => {
     }
   };
 
-  // 🔹 Tambah makanan
   const addFood = () => {
     if (!newFood.name || !newFood.category || !newFood.expiryDate) return;
 
@@ -84,7 +81,6 @@ const FoodStorageList = () => {
     setNewFood({ name: "", category: "", expiryDate: "" });
   };
 
-  // 🔹 Hapus makanan
   const deleteFood = (id: string) => {
     setFoods(foods.filter((f) => f.id !== id));
   };
