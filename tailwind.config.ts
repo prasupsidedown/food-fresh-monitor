@@ -47,6 +47,18 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        iot: {
+          primary: "hsl(var(--iot-primary))",
+          secondary: "hsl(var(--iot-secondary))",
+          warning: "hsl(var(--iot-warning))",
+          danger: "hsl(var(--iot-danger))",
+          success: "hsl(var(--iot-success))",
+        },
+        sensor: {
+          temp: "hsl(var(--sensor-temp))",
+          humidity: "hsl(var(--sensor-humidity))",
+          airQuality: "hsl(var(--sensor-air-quality))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
