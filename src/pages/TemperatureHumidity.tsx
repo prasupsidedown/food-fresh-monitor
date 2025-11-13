@@ -1,46 +1,72 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import Navigation from "@/components/Navigation";
 import LineChartComponent from "@/components/LineChart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Thermometer, Droplets, Calendar, Download } from "lucide-react";
 
-const generateDetailedMockData = (days: number = 7) => {
-  const data = [];
-  const now = new Date();
-  
-  for (let d = days - 1; d >= 0; d--) {
-    for (let h = 0; h < 24; h++) {
-      const time = new Date(now.getTime() - d * 24 * 60 * 60 * 1000 - (23 - h) * 60 * 60 * 1000);
-      data.push({
-        time: time.toLocaleDateString('id-ID', { 
-          day: '2-digit', 
-          month: '2-digit',
-          hour: '2-digit', 
-          minute: '2-digit' 
-        }),
-        temperature: Math.round((25 + Math.sin(h * 0.3) * 4 + Math.sin(d * 0.1) * 2 + Math.random() * 2) * 10) / 10,
-        humidity: Math.round((60 + Math.cos(h * 0.25) * 12 + Math.cos(d * 0.15) * 8 + Math.random() * 3) * 10) / 10
-      });
-    }
-  }
-  
-  return data;
-};
+// 🧠 Ganti dengan URL server kamu
+const API_URL = "http://localhost:5000/api/sensor";
 
 const TemperatureHumidity = () => {
   const [timeRange, setTimeRange] = useState<"1d" | "7d" | "30d">("7d");
-  const [chartData, setChartData] = useState(generateDetailedMockData(7));
+  const [chartData, setChartData] = useState<
+    { time: string; temperature: number; humidity: number }[]
+  >([]);
 
+  // 🔄 Ambil data sensor dari MongoDB lewat server.js
   useEffect(() => {
-    const days = timeRange === "1d" ? 1 : timeRange === "7d" ? 7 : 30;
-    setChartData(generateDetailedMockData(days));
+    async function fetchData() {
+      try {
+        const res = await axios.get<
+          { temperature: number; humidity: number; timestamp: string }[]
+        >(API_URL);
+
+        const days = timeRange === "1d" ? 1 : timeRange === "7d" ? 7 : 30;
+        const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+
+        // Filter dan format data
+        const formatted = res.data
+          .filter((d) => new Date(d.timestamp).getTime() >= cutoff)
+          .map((d) => ({
+            time: new Date(d.timestamp).toLocaleDateString("id-ID", {
+              day: "2-digit",
+              month: "2-digit",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            temperature: d.temperature,
+            humidity: d.humidity,
+          }));
+
+        setChartData(formatted);
+      } catch (err) {
+        console.error("❌ Gagal mengambil data suhu & kelembaban:", err);
+      }
+    }
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000); // update tiap 5 detik
+    return () => clearInterval(interval);
   }, [timeRange]);
 
+  // 📊 Hitung statistik
   const getStatistics = () => {
-    const temps = chartData.map(d => d.temperature);
-    const humidities = chartData.map(d => d.humidity);
-    
+    if (!chartData.length) {
+      return {
+        avgTemp: "0.0",
+        maxTemp: "0.0",
+        minTemp: "0.0",
+        avgHumidity: "0.0",
+        maxHumidity: "0.0",
+        minHumidity: "0.0",
+      };
+    }
+
+    const temps = chartData.map((d) => d.temperature);
+    const humidities = chartData.map((d) => d.humidity);
+
     return {
       avgTemp: (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1),
       maxTemp: Math.max(...temps).toFixed(1),
@@ -164,8 +190,13 @@ const TemperatureHumidity = () => {
         {/* Chart */}
         <LineChartComponent
           data={chartData}
-          title={`Timeline Suhu & Kelembaban - ${timeRange === "1d" ? "24 Jam Terakhir" : 
-                    timeRange === "7d" ? "7 Hari Terakhir" : "30 Hari Terakhir"}`}
+          title={`Timeline Suhu & Kelembaban - ${
+            timeRange === "1d"
+              ? "24 Jam Terakhir"
+              : timeRange === "7d"
+              ? "7 Hari Terakhir"
+              : "30 Hari Terakhir"
+          }`}
         />
 
         {/* Analysis */}
@@ -173,10 +204,8 @@ const TemperatureHumidity = () => {
           <CardHeader>
             <CardTitle>Analisis Data</CardTitle>
             <CardDescription>
-              Insight dari data sensor DHT22 dalam periode {
-                timeRange === "1d" ? "24 jam" : 
-                timeRange === "7d" ? "7 hari" : "30 hari"
-              } terakhir
+              Insight dari data sensor DHT22 dalam periode{" "}
+              {timeRange === "1d" ? "24 jam" : timeRange === "7d" ? "7 hari" : "30 hari"} terakhir
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -184,15 +213,17 @@ const TemperatureHumidity = () => {
               <div>
                 <h4 className="font-semibold text-sensor-temp mb-2">Kondisi Suhu</h4>
                 <p className="text-sm text-muted-foreground">
-                  Suhu rata-rata {stats.avgTemp}°C berada dalam rentang optimal untuk penyimpanan makanan. 
-                  Fluktuasi antara {stats.minTemp}°C - {stats.maxTemp}°C menunjukkan stabilitas yang baik.
+                  Suhu rata-rata {stats.avgTemp}°C berada dalam rentang optimal untuk penyimpanan
+                  makanan. Fluktuasi antara {stats.minTemp}°C - {stats.maxTemp}°C menunjukkan
+                  stabilitas yang baik.
                 </p>
               </div>
               <div>
                 <h4 className="font-semibold text-sensor-humidity mb-2">Kondisi Kelembaban</h4>
                 <p className="text-sm text-muted-foreground">
-                  Kelembaban rata-rata {stats.avgHumidity}% dengan rentang {stats.minHumidity}% - {stats.maxHumidity}% 
-                  membantu mencegah pertumbuhan bakteri dan menjaga kualitas makanan.
+                  Kelembaban rata-rata {stats.avgHumidity}% dengan rentang {stats.minHumidity}% -{" "}
+                  {stats.maxHumidity}% membantu mencegah pertumbuhan bakteri dan menjaga kualitas
+                  makanan.
                 </p>
               </div>
             </div>

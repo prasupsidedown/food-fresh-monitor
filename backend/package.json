@@ -1,0 +1,13 @@
+{
+  "temperature": 28.52,
+  "humidity": 65.21,
+  "gasAnalog": 412,
+  "gasDigital": 0,
+  "detected": true,
+  "status": {
+    "temperature": "stabil",
+    "humidity": "turun",
+    "airQuality": "baik"
+  },
+  "timestamp": "2025-11-13T13:52:00.000Z"
+}

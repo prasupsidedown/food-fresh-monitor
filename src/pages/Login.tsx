@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { SplashScreen } from "@/components/SplashScreen";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,9 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [blurActive, setBlurActive] = useState(false);
+  const blurTimeout = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -36,9 +40,34 @@ const Login = () => {
     }, 1000);
   };
 
+  if (showSplash) {
+    return (
+      <SplashScreen
+        onFinish={() => {
+          setBlurActive(true);
+          blurTimeout.current = setTimeout(() => {
+            setBlurActive(false);
+            setShowSplash(false);
+          }, 1000); // blur+fade for 1s
+        }}
+        duration={4000}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-8">
+    <div
+      className={
+        "min-h-screen flex items-center justify-center p-4 transition-all duration-1000 " +
+        (blurActive ? "blur-md opacity-60" : "blur-none opacity-100")
+      }
+    >
+      <div 
+        className={
+          "w-full max-w-md space-y-8 transition-all duration-1000 transform " + 
+          (!blurActive ? "animate-fade-scale-in opacity-100 scale-100" : "opacity-0 scale-95")
+        }
+      >
         {/* Header */}
         <div className="text-center space-y-4">
           <div className="flex justify-center items-center space-x-2 mb-4">

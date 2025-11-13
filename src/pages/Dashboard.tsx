@@ -1,62 +1,67 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import Navigation from "@/components/Navigation";
 import SensorCard from "@/components/SensorCard";
 import LineChartComponent from "@/components/LineChart";
 import FoodStorageList from "@/components/FoodStorageList";
 import { Thermometer, Droplets, Wind } from "lucide-react";
+import { TipsBox } from "@/components/TipsBox";
 
-// Mock data generator
-const generateMockData = () => {
-  const data = [];
-  const now = new Date();
-  
-  for (let i = 23; i >= 0; i--) {
-    const time = new Date(now.getTime() - i * 60 * 60 * 1000);
-    data.push({
-      time: time.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-      temperature: Math.round((25 + Math.sin(i * 0.1) * 3 + Math.random() * 2) * 10) / 10,
-      humidity: Math.round((60 + Math.cos(i * 0.15) * 10 + Math.random() * 5) * 10) / 10
-    });
-  }
-  
-  return data;
-};
+// URL API server kamu (ubah sesuai IP atau domain server.js)
+const API_URL = "http://localhost:5000/api/sensor";
 
 const Dashboard = () => {
   const [sensorData, setSensorData] = useState({
-    temperature: "27.5",
-    humidity: "65.2",
-    airQuality: "78"
+    temperature: "0.0",
+    humidity: "0.0",
+    airQuality: "0"
   });
-  
-  const [chartData, setChartData] = useState(generateMockData());
 
-  // Simulate real-time data updates
+  const [chartData, setChartData] = useState<
+    { time: string; temperature: number; humidity: number }[]
+  >([]);
+
+  // 🔄 Ambil data dari server
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSensorData(prev => ({
-        temperature: (25 + Math.sin(Date.now() * 0.001) * 3 + Math.random() * 1).toFixed(1),
-        humidity: (60 + Math.cos(Date.now() * 0.001) * 10 + Math.random() * 2).toFixed(1),
-        airQuality: (70 + Math.sin(Date.now() * 0.0008) * 15 + Math.random() * 5).toFixed(0)
-      }));
-      
-      // Update chart data (keep last 24 points)
-      setChartData(prev => {
-        const newData = [...prev];
-        const now = new Date();
-        newData.shift(); // Remove oldest point
-        newData.push({
-          time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          temperature: parseFloat(sensorData.temperature),
-          humidity: parseFloat(sensorData.humidity)
-        });
-        return newData;
-      });
-    }, 5000); // Update every 5 seconds
+    async function fetchData() {
+      try {
+        const res = await axios.get<
+          { temperature: number; humidity: number; airQuality: number; timestamp: string }[]
+        >(API_URL);
 
+        // Ambil data terakhir dari database
+        const latest = res.data[res.data.length - 1];
+        if (latest) {
+          setSensorData({
+            temperature: latest.temperature.toFixed(1),
+            humidity: latest.humidity.toFixed(1),
+            airQuality: latest.airQuality.toFixed(0),
+          });
+        }
+
+        // Siapkan data grafik suhu & kelembaban (max 24 data terakhir)
+        const formattedData = res.data
+          .slice(-24)
+          .map((d) => ({
+            time: new Date(d.timestamp).toLocaleTimeString("id-ID", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            temperature: d.temperature,
+            humidity: d.humidity,
+          }));
+        setChartData(formattedData);
+      } catch (err) {
+        console.error("❌ Gagal mengambil data sensor:", err);
+      }
+    }
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000); // update tiap 5 detik
     return () => clearInterval(interval);
-  }, [sensorData]);
+  }, []);
 
+  // 💨 Status kualitas udara
   const getAirQualityStatus = (value: number) => {
     if (value <= 50) return { status: "Baik", color: "text-iot-success", trend: "stable" as const };
     if (value <= 80) return { status: "Sedang", color: "text-iot-warning", trend: "up" as const };
@@ -117,7 +122,7 @@ const Dashboard = () => {
           <div className="lg:col-span-1">
             <LineChartComponent
               data={chartData}
-              title="Grafik Suhu & Kelembaban (24 Jam Terakhir)"
+              title="Grafik Suhu & Kelembaban (Data Terbaru)"
             />
           </div>
 
@@ -132,21 +137,26 @@ const Dashboard = () => {
           <div className="gradient-card p-4 rounded-lg shadow-soft">
             <h3 className="font-semibold text-sensor-temp mb-2">Status Suhu</h3>
             <p className="text-sm text-muted-foreground">
-              Suhu saat ini dalam rentang normal untuk penyimpanan makanan
+              Suhu saat ini {sensorData.temperature}°C — dalam rentang normal untuk penyimpanan makanan.
             </p>
           </div>
           <div className="gradient-card p-4 rounded-lg shadow-soft">
             <h3 className="font-semibold text-sensor-humidity mb-2">Status Kelembaban</h3>
             <p className="text-sm text-muted-foreground">
-              Kelembaban optimal untuk mencegah pertumbuhan bakteri
+              Kelembaban {sensorData.humidity}% — optimal untuk mencegah pertumbuhan bakteri.
             </p>
           </div>
           <div className="gradient-card p-4 rounded-lg shadow-soft">
             <h3 className={`font-semibold mb-2 ${airQualityInfo.color}`}>Status Kualitas Udara</h3>
             <p className="text-sm text-muted-foreground">
-              Tingkat {airQualityInfo.status} - {sensorData.airQuality} AQI
+              Kualitas udara: {airQualityInfo.status} ({sensorData.airQuality} AQI)
             </p>
           </div>
+        </div>
+
+        {/* Tips Box - full width bawah */}
+        <div className="mt-6">
+          <TipsBox />
         </div>
       </main>
     </div>
